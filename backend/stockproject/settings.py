@@ -60,7 +60,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'stockproject.urls'
-CORS_ALLOWED_ORIGINS = ["*"] # CORS_ALLOWED_ORIGINS = ["*"] 
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins
+CORS_ALLOW_CREDENTIALS = True # Allow credentials (cookies, authorization headers, etc.)
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
