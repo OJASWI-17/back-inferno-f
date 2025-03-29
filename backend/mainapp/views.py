@@ -23,7 +23,7 @@ from django.contrib.auth.decorators import login_required
 def land_page(request):
     
     
-    return render(request,'mainapp/landing_page.html')
+    return JsonResponse("landing page")
 
 def login_page(request):
     if request.method=="POST":
