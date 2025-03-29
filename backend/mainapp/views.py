@@ -114,10 +114,16 @@ def get_stock_updates(selected_stocks):
 
     return data
 
+
+from django.shortcuts import redirect, reverse
+from urllib.parse import urlencode
+# urlencode is used to encode the url parameters
 def stockPicker(request):
-    """View to display available stocks for selection."""
-    stock_picker = df["ticker"].unique().tolist() # unique is used to get the unique values from the column , tolist is used to convert the output to list
-    return JsonResponse({"stock_picker": stock_picker}, status=200)
+    """Redirect to stockTracker with default stocks instead of showing picker."""
+    # Choose some default stocks (you can modify this list)
+    default_stocks = df["ticker"].unique().tolist()[:]  # Taking first 5 stocks as default
+    params = urlencode([('stock_picker', stock) for stock in default_stocks], doseq=True)
+    return redirect(f"{reverse('stocktracker')}?{params}")
 
 @sync_to_async
 def checkAuthenticated(request):
