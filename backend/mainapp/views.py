@@ -20,61 +20,73 @@ from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
 
 
+# csrf_exempt is used to exempt the view from CSRF verification means that the view will not check for CSRF token in the request
+
+@csrf_exempt  # You might want to handle CSRF properly in production
 def land_page(request):
-    
-    
-    return JsonResponse("landing page")
+    return JsonResponse({'message': 'Landing page endpoint'})
 
+@csrf_exempt
 def login_page(request):
-    if request.method=="POST":
-        
-        username=request.POST.get('username')
-        email=request.POST.get('email')
-        password=request.POST.get('password')
-        
-        if not User.objects.filter(username=username).exists():
-            messages.error(request,'invalid username')
-            return redirect('/login/')
-         
-        user = authenticate(username=username,email=email,password=password) #we suse authenticate method to check the username and password because password is encrypted
-        if user is None:
-            messages.error(request,'invalid password')
-            return redirect('/login/')  
-        else:
-            login(request,user) #login method is used to login the user and store the user in the session
-            return redirect('/stockPicker/')   
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            email = data.get('email')
+            password = data.get('password')
             
-    return render(request,'mainapp/login.html')  
-
-def register(request):
-    if request.method=="POST":
-        first_name=request.POST.get('first_name')
-        last_name=request.POST.get('last_name')
-        username=request.POST.get('username')
-        email = request.POST.get('email')
-        password=request.POST.get('password')
+            if not User.objects.filter(username=username).exists():
+                return JsonResponse({'error': 'Invalid username'}, status=400)
+            
+            user = authenticate(username=username, email=email, password=password)
+            if user is None:
+                return JsonResponse({'error': 'Invalid password'}, status=400)
+            else:
+                login(request, user)
+                return JsonResponse({'message': 'Login successful', 'redirect': '/stockPicker/'})
         
-        user =User.objects.filter(username=username)
-        if user.exists():
-            messages.info(request,'Username is already taken') 
-            return redirect('/register/')
-        user = User.objects.create(
-            first_name=first_name,last_name=last_name,username=username,email=email)
-        
-        #in django we use set_password method to store the password in encrypted form , it does not encrpyt the password by default because it is string     
-        user.set_password(password)
-        user.save()
-        messages.info(request,'account created successfully')
-        return redirect('/login/')       
-        
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
-    return render(request,'mainapp/register.html')
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+@csrf_exempt
+def register(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            first_name = data.get('first_name')
+            last_name = data.get('last_name')
+            username = data.get('username')
+            email = data.get('email')
+            password = data.get('password')
+            
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({'error': 'Username is already taken'}, status=400)
+            
+            user = User.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                username=username,
+                email=email
+            )
+            user.set_password(password)
+            user.save()
+            
+            return JsonResponse({'message': 'Account created successfully', 'redirect': '/login/'})
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+@csrf_exempt
 def logout_page(request):
-    logout(request)
-    return render(request,'mainapp/logout.html')
-  
+    if request.method == "POST":
+        logout(request)
+        return JsonResponse({'message': 'Logout successful'})
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405) 
 
 # Path to CSV file
 CSV_FILE_PATH = "mainapp/multi_stock_data.csv"
