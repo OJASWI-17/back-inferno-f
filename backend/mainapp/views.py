@@ -22,9 +22,7 @@ from django.contrib.auth.decorators import login_required
 
 # csrf_exempt is used to exempt the view from CSRF verification means that the view will not check for CSRF token in the request
 
-@csrf_exempt  # You might want to handle CSRF properly in production
-def land_page(request):
-    return JsonResponse({'message': 'Landing page endpoint'})
+
 
 @csrf_exempt
 def login_page(request):
