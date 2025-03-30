@@ -62,9 +62,8 @@ def fetch_stock_data_from_csv(selected_stocks):
 @shared_task
 def update_stock(selected_stocks=None):
     """Fetch stock data, and send WebSocket updates."""
-    if selected_stocks is None:
-        selected_stocks = list(StockDetail.objects.values_list("stock", flat=True)) # output is a list of stock symbols from the StockDetail model example - ['AAPL', 'GOOGL', 'MSFT']
-
+     # if no stocks are provided, fetch from the database
+    selected_stocks = ['MSFT'] # example of output ['AAPL', 'GOOGL']
     if not selected_stocks:
         print("No stocks selected.")
         return

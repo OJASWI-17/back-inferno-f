@@ -129,11 +129,15 @@ from django.shortcuts import redirect, reverse
 from urllib.parse import urlencode
 # urlencode is used to encode the url parameters
 def stockPicker(request):
-    """Redirect to stockTracker with default stocks instead of showing picker."""
-    # Choose some default stocks (you can modify this list)
-    default_stocks = df["ticker"].unique().tolist()[:]  # Taking first 5 stocks as default
-    params = urlencode([('stock_picker', stock) for stock in default_stocks], doseq=True)
-    return redirect(f"{reverse('stocktracker')}?{params}")
+    """Return JSON list of default stocks instead of redirecting"""
+    try:
+        default_stocks = df["ticker"].unique().tolist()[:]  # Get first 5 stocks
+        return JsonResponse({
+            "stocks": default_stocks,
+            "tracker_url": f"{reverse('stocktracker')}?{urlencode([('stock_picker', stock) for stock in default_stocks], doseq=True)}"
+        })
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 @sync_to_async
 def checkAuthenticated(request):
@@ -147,7 +151,7 @@ async def stockTracker(request):
         return JsonResponse({"error": "Login First"}, status=401)
 
     """View to fetch initial stock data and trigger Celery updates."""
-    selected_stocks = request.GET.getlist("stock_picker")  # Get multiple values from query params
+    selected_stocks = request.GET.getlist("stock_picker")  # Get multiple values from query params 
 
     if not selected_stocks:
         return JsonResponse({"error": "No stocks selected"}, status=400)
