@@ -24,59 +24,82 @@ from django.contrib.auth.decorators import login_required
 
 
 
-@csrf_exempt
-def login_page(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            username = data.get('username')
-            email = data.get('email')
-            password = data.get('password')
-            
-            if not User.objects.filter(username=username).exists():
-                return JsonResponse({'error': 'Invalid username'}, status=400)
-            
-            user = authenticate(username=username, email=email, password=password)
-            if user is None:
-                return JsonResponse({'error': 'Invalid password'}, status=400)
-            else:
-                login(request, user)
-                return JsonResponse({'message': 'Login successful', 'redirect': '/stockPicker/'})
-        
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 
-@csrf_exempt
-def register(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            first_name = data.get('first_name')
-            last_name = data.get('last_name')
-            username = data.get('username')
-            email = data.get('email')
-            password = data.get('password')
-            
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({'error': 'Username is already taken'}, status=400)
-            
-            user = User.objects.create(
-                first_name=first_name,
-                last_name=last_name,
-                username=username,
-                email=email
-            )
-            user.set_password(password)
-            user.save()
-            
-            return JsonResponse({'message': 'Account created successfully', 'redirect': '/login/'})
+@require_POST
+@csrf_protect
+def login_page(request):
+    try:
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
         
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+        if not username or not password:
+            return JsonResponse({'error': 'Username and password are required'}, status=400)
+            
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return JsonResponse({'error': 'Invalid credentials'}, status=400)
+            
+        login(request, user)
+        return JsonResponse({
+            'message': 'Login successful', 
+            'redirect': '/stockPicker/'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+
+@require_POST
+@csrf_protect
+def register(request):
+    try:
+        data = json.loads(request.body)
+        first_name = data.get('first_name', '').strip()
+        last_name = data.get('last_name', '').strip()
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        # Validation
+        if not all([first_name, last_name, username, email, password]):
+            return JsonResponse({'error': 'All fields are required'}, status=400)
+            
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({'error': 'Invalid email format'}, status=400)
+            
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({'error': 'Username is already taken'}, status=400)
+            
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({'error': 'Email is already registered'}, status=400)
+            
+        if len(password) < 8:
+            return JsonResponse({'error': 'Password must be at least 8 characters'}, status=400)
+            
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        return JsonResponse({
+            'message': 'Account created successfully', 
+            'redirect': '/login/'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
 def logout_page(request):
