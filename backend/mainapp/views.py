@@ -182,7 +182,8 @@ def stock_chart_data(request, stock_symbol):
     df = pd.DataFrame(json.loads(data))
 
     # Ensure the 'time' column is correctly converted to a Unix timestamp
-    df["time"] = pd.to_datetime(df["time"]).view("int64") // 10**9  
+    df["time"] = pd.to_datetime(df["time"]).astype("int64") // 10**9  
+ 
 
     # Convert DataFrame to JSON format expected by React Chart
     chart_data = df[["time", "open", "high", "low", "close", "volume"]].to_dict(orient="records")  
