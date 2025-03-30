@@ -174,15 +174,18 @@ redis_conn = redis.Redis(host="localhost", port=6379, db=0, decode_responses=Tru
 def stock_chart_data(request, stock_symbol):
     """Fetch stock data from Redis and return it in JSON format."""
     redis_key = f"candlestick_data:{stock_symbol}"
-    data = redis_conn.get(redis_key) # output will be the data stored in the redis key example - '[{"time": "2021-01-01", "open": 100.0, "high": 110.0, "low": 90.0, "close": 105.0}, ...]'
+    data = redis_conn.get(redis_key)  
 
     if not data:
         return JsonResponse({"error": "No data found"}, status=404)
 
-    df = pd.DataFrame(json.loads(data)) # Convert JSON string to DataFrame , output will be a dataframe with columns time,open,high,low,close
-    df["time"] = pd.to_datetime(df["time"]).astype(int) // 10**9  # Convert time to Unix timestamp in seconds , unix timestamp is the number of seconds passed since 1st jan 1970
+    df = pd.DataFrame(json.loads(data))
 
-    chart_data = df[["time", "open", "high", "low", "close"]].to_dict(orient="records") # to_dict is used to convert the dataframe to dictionary , orient='records' is used to convert the dataframe to list of dictionaries
+    # Ensure the 'time' column is correctly converted to a Unix timestamp
+    df["time"] = pd.to_datetime(df["time"]).view("int64") // 10**9  
+
+    # Convert DataFrame to JSON format expected by React Chart
+    chart_data = df[["time", "open", "high", "low", "close", "volume"]].to_dict(orient="records")  
     return JsonResponse(chart_data, safe=False)
 
 
