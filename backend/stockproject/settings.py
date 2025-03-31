@@ -102,7 +102,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'mainapp', 'static'),
-    os.path.join(BASE_DIR, 'frontend', 'dist'),
+    
 ]
 
 # Session and Authentication
@@ -162,9 +162,14 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(REDIS_URL)],
+            "hosts": [REDIS_URL],
             "capacity": 1500,
             "expiry": 10,
+            "channel_capacity": {   # Optional performance tuning
+                "http.request": 200,
+                "http.response!*": 100,
+                "websocket.send*": 50,
+            }
         },
     },
 }
