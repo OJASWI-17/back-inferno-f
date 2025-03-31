@@ -229,16 +229,23 @@ def chart_view(request):
 
 
 
-
+import logging
+logger = logging.getLogger(__name__)
 @csrf_exempt 
 @require_POST
 def place_order(request):
+    logger.debug(f"Received POST data: {request.POST}")
+    
     """Handle placing buy/sell orders (market or limit)."""
     if not request.user.is_authenticated:
         return JsonResponse({"error": "User not authenticated"}, status=401)
 
     stock_symbol = request.POST.get("stock_symbol") # get the stock symbol from the post request
-    quantity = int(request.POST.get("quantity"))
+    quantity_str = request.POST.get("quantity")
+    if not quantity_str:
+        return JsonResponse({"error": "Quantity is required"}, status=400)
+
+    quantity = int(quantity_str)
     order_type = request.POST.get("order_type")  # 'market' or 'limit'
     price = request.POST.get("price")  # Required for limit orders
     action = request.POST.get("action")  # 'buy' or 'sell'
@@ -277,7 +284,7 @@ def place_order(request):
             return JsonResponse({"error": result["error"]}, status=400)
 
         return JsonResponse({
-            "success": True,
+            "success": True, # can i remove this line ? yes or no -
             "balance": result["balance"],
             "stock": stock_symbol,
             "quantity": quantity,

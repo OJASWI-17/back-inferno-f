@@ -164,7 +164,7 @@ fetchLivePrices();  // Initial fetch
   method: "POST",
   headers: {
     "Content-Type": "application/x-www-form-urlencoded",
-    "X-CSRFToken": "{{ csrf_token }}",
+    "X-CSRFToken": "{{ csrf_token }}", // 
   },
   body: new URLSearchParams({ // new URLSearchParams() is used to create a new URLSearchParams object , what is URLSearchParams  -> URLSearchParams is an interface defined in the URLSearchParams API that allows creation and manipulation of URL query parameters.
     stock_symbol: stockSymbol,

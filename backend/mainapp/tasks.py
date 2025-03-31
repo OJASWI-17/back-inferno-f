@@ -30,7 +30,7 @@ def fetch_stock_data_from_csv(selected_stocks):
         if index >= len(stock_data):
             index = 0
 
-        row = stock_data.iloc[index]
+        row = stock_data.iloc[index] # .iloc is used to get a row by index 
         stock_indices[ticker] = index + 1  # Move index forward
 
         # Standardized data format
