@@ -18,6 +18,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout 
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
+
 
 
 # csrf_exempt is used to exempt the view from CSRF verification means that the view will not check for CSRF token in the request
@@ -94,13 +96,11 @@ df = pd.read_csv(CSV_FILE_PATH)
 
 # Dictionary to store current index for each stock
 stock_indices = {ticker: 0 for ticker in df["ticker"].unique()} # output will be {'AAPL': 0, 'GOOGL': 0, 'MSFT': 0, 'AMZN': 0, 'TSLA': 0} , here 0 is the index of the stock
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.middleware.csrf import get_token
 
 @ensure_csrf_cookie
 def get_csrf(request):
     response = JsonResponse({"status": "CSRF cookie set"})
-    response["X-CSRFToken"] = get_token(request)  # Actively set token
+    response["X-CSRFToken"] = request.META.get("CSRF_COOKIE")  # Explicitly set header
     return response
 
 def get_stock_updates(selected_stocks):
