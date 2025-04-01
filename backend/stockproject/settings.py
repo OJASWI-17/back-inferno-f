@@ -30,7 +30,12 @@ DEBUG = True
 #     "localhost",
 #     "127.0.0.1",
 # ]
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "20.193.151.222",  # Your Azure VM IP
+    "localhost",
+    "127.0.0.1",
+    # Add your domain if you have one
+]
 
 # Application definition
 
@@ -49,20 +54,34 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Should be at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # Keep this enabled
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CSRF_USE_SESSIONS = False  # Default - uses cookies
-CSRF_COOKIE_HTTPONLY = False  # So JavaScript can read it
-ROOT_URLCONF = 'stockproject.urls'
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins
-CORS_ALLOW_CREDENTIALS = True # Allow credentials (cookies, authorization headers, etc.)
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript to read the cookie
+CSRF_USE_SESSIONS = False 
+SESSION_COOKIE_SECURE = False 
+# Uses cookies (default)
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://20.193.151.222",
+    # Add any other domains you use
+]
+# CORS Settings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://20.193.151.222",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -126,6 +145,7 @@ USE_TZ = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://20.193.151.222"
 ]
 
 

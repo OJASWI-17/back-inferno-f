@@ -234,6 +234,8 @@ logger = logging.getLogger(__name__)
  
 @require_POST
 def place_order(request):
+    print("CSRF Token from Cookie:", request.COOKIES.get('csrftoken'))
+    print("CSRF Token from Header:", request.headers.get('X-CSRFToken'))
     logger.debug(f"Received request: {request.method}, Content-Type: {request.content_type}")
     
     if not request.user.is_authenticated:
