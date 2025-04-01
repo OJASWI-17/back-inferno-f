@@ -68,6 +68,7 @@ CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript to read the cookie
 CSRF_USE_SESSIONS = False 
 SESSION_COOKIE_SECURE = False 
+SESSION_COOKIE_SAMESITE = 'Lax'
 # Uses cookies (default)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
@@ -78,7 +79,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://20.193.151.222",
-    "http://127.0.0.1:5173",
+    
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']

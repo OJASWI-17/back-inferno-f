@@ -94,7 +94,8 @@ df = pd.read_csv(CSV_FILE_PATH)
 
 # Dictionary to store current index for each stock
 stock_indices = {ticker: 0 for ticker in df["ticker"].unique()} # output will be {'AAPL': 0, 'GOOGL': 0, 'MSFT': 0, 'AMZN': 0, 'TSLA': 0} , here 0 is the index of the stock
-
+def get_csrf(request):
+    return JsonResponse({"status": "CSRF cookie set"})
 def get_stock_updates(selected_stocks):
     """Fetch stock data from CSV and simulate real-time updates."""
     global stock_indices 
