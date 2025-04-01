@@ -40,11 +40,11 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'corsheaders',
+    'corsheaders',  # Must be before any middleware-dependent apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
+    'django.contrib.sessions',  # Required for sessions
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mainapp',
@@ -54,8 +54,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # Should be at the top
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Should be just after SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # Keep this enabled
@@ -63,26 +63,27 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
-CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript to read the cookie
-CSRF_USE_SESSIONS = False 
-SESSION_COOKIE_SECURE = False 
-SESSION_COOKIE_SAMESITE = 'Lax'
-# Uses cookies (default)
+
+# Security Settings (Critical for CSRF)
+CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript to read
+CSRF_COOKIE_SECURE = True     # True in production (False for HTTP development)
+CSRF_COOKIE_SAMESITE = 'None' # Required for cross-origin
+CSRF_COOKIE_PATH = '/'        # Make available site-wide
+CSRF_USE_SESSIONS = False     # Use cookies (not sessions)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://20.193.151.222",
-    # Add any other domains you use
 ]
-# CORS Settings
+
+# CORS Settings (Must match CSRF)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://20.193.151.222",
-    
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+SESSION_COOKIE_SAMESITE = 'None'  # Must match CSRF setting
+SESSION_COOKIE_SECURE = True      # Must match CSRF setting
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -102,7 +103,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'stockproject.wsgi.application'
 ASGI_APPLICATION = 'stockproject.asgi.application'
 
-
+ROOT_URLCONF = "stockproject.urls"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
