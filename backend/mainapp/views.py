@@ -231,84 +231,93 @@ def chart_view(request):
 
 import logging
 logger = logging.getLogger(__name__)
-@csrf_exempt 
+ 
 @require_POST
 def place_order(request):
-    logger.debug(f"Received POST data: {request.POST}")
+    logger.debug(f"Received request: {request.method}, Content-Type: {request.content_type}")
     
-    """Handle placing buy/sell orders (market or limit)."""
     if not request.user.is_authenticated:
         return JsonResponse({"error": "User not authenticated"}, status=401)
 
-    stock_symbol = request.POST.get("stock_symbol") # get the stock symbol from the post request
-    quantity_str = request.POST.get("quantity")
-    if not quantity_str:
-        return JsonResponse({"error": "Quantity is required"}, status=400)
+    try:
+        # For form-urlencoded data (what your frontend is sending)
+        stock_symbol = request.POST.get("stock_symbol")
+        quantity_str = request.POST.get("quantity")
+        order_type = request.POST.get("order_type")
+        price = request.POST.get("price")
+        action = request.POST.get("action")
+        
+        logger.debug(f"Parsed data: stock={stock_symbol}, qty={quantity_str}, type={order_type}, price={price}, action={action}")
+        
+        if not quantity_str:
+            return JsonResponse({"error": "Quantity is required"}, status=400)
 
-    quantity = int(quantity_str)
-    order_type = request.POST.get("order_type")  # 'market' or 'limit'
-    price = request.POST.get("price")  # Required for limit orders
-    action = request.POST.get("action")  # 'buy' or 'sell'
+        quantity = int(quantity_str)
+        
 
-    # Fetch current market price from Redis
-    redis_key = f"candlestick_data:{stock_symbol}"
-    data = redis_conn.get(redis_key)
+        # Fetch current market price from Redis
+        redis_key = f"candlestick_data:{stock_symbol}"
+        data = redis_conn.get(redis_key)
 
-    if not data:
-        return JsonResponse({"error": "No data found for the selected stock"}, status=404)
+        if not data:
+            return JsonResponse({"error": "No data found for the selected stock"}, status=404)
 
-    latest_data = json.loads(data)[-1]  # Get the latest candlestick data
-    market_price = Decimal(latest_data["close"])  # Use the closing price as the market price
+        latest_data = json.loads(data)[-1]  # Get the latest candlestick data
+        market_price = Decimal(latest_data["close"])  # Use the closing price as the market price
 
-    # Validate sell orders
-    if action == "sell":
-        # Check if the user owns the stock
-        user_stock = UserStock.objects.filter(user=request.user, stock=stock_symbol).first()
-        if not user_stock:
-            return JsonResponse({"error": "You do not own this stock"}, status=400)
+        # Validate sell orders
+        if action == "sell":
+            # Check if the user owns the stock
+            user_stock = UserStock.objects.filter(user=request.user, stock=stock_symbol).first()
+            if not user_stock:
+                return JsonResponse({"error": "You do not own this stock"}, status=400)
 
-        # Check if the user has enough shares to sell
-        if user_stock.quantity < quantity:
-            return JsonResponse({"error": "Not enough holding shares"}, status=400)
+            # Check if the user has enough shares to sell
+            if user_stock.quantity < quantity:
+                return JsonResponse({"error": "Not enough holding shares"}, status=400)
 
-    if order_type == "market":
-        # Execute market order immediately
-        if action == "buy":
-            result = buy_stock(request.user, stock_symbol, quantity, market_price)
-        elif action == "sell":
-            result = sell_stock(request.user, stock_symbol, quantity, market_price)
+        if order_type == "market":
+            # Execute market order immediately
+            if action == "buy":
+                result = buy_stock(request.user, stock_symbol, quantity, market_price)
+            elif action == "sell":
+                result = sell_stock(request.user, stock_symbol, quantity, market_price)
+            else:
+                return JsonResponse({"error": "Invalid action"}, status=400)
+
+            if "error" in result:
+                return JsonResponse({"error": result["error"]}, status=400)
+
+            return JsonResponse({
+                "success": True, # can i remove this line ? yes or no -
+                "balance": result["balance"],
+                "stock": stock_symbol,
+                "quantity": quantity,
+                "price": float(result["price"]),  # Market price used for the order
+            })
+        elif order_type == "limit":
+            # Create a limit order
+            if not price:
+                return JsonResponse({"error": "Price is required for limit orders"}, status=400)
+
+            limit_price = Decimal(price)
+            LimitOrder.objects.create( # create a new limit order
+                user=request.user,
+                stock=stock_symbol,
+                quantity=quantity,
+                price=limit_price,
+                order_type="BUY" if action == "buy" else "SELL",
+            )
+            return JsonResponse({
+                "success": True,
+                "message": f"Limit order placed for {quantity} shares of {stock_symbol} at ${limit_price}",
+            })
         else:
-            return JsonResponse({"error": "Invalid action"}, status=400)
-
-        if "error" in result:
-            return JsonResponse({"error": result["error"]}, status=400)
-
-        return JsonResponse({
-            "success": True, # can i remove this line ? yes or no -
-            "balance": result["balance"],
-            "stock": stock_symbol,
-            "quantity": quantity,
-            "price": float(result["price"]),  # Market price used for the order
-        })
-    elif order_type == "limit":
-        # Create a limit order
-        if not price:
-            return JsonResponse({"error": "Price is required for limit orders"}, status=400)
-
-        limit_price = Decimal(price)
-        LimitOrder.objects.create( # create a new limit order
-            user=request.user,
-            stock=stock_symbol,
-            quantity=quantity,
-            price=limit_price,
-            order_type="BUY" if action == "buy" else "SELL",
-        )
-        return JsonResponse({
-            "success": True,
-            "message": f"Limit order placed for {quantity} shares of {stock_symbol} at ${limit_price}",
-        })
-    else:
-        return JsonResponse({"error": "Invalid order type"}, status=400)
+            return JsonResponse({"error": "Invalid order type"}, status=400)
+    
+    except Exception as e:
+        logger.error(f"Error processing order: {str(e)}", exc_info=True)
+        return JsonResponse({"error": "Internal server error"}, status=500)
 
 
 def get_live_prices(request):

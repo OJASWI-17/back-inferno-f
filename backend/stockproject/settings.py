@@ -58,7 +58,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+CSRF_USE_SESSIONS = False  # Default - uses cookies
+CSRF_COOKIE_HTTPONLY = False  # So JavaScript can read it
 ROOT_URLCONF = 'stockproject.urls'
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins
 CORS_ALLOW_CREDENTIALS = True # Allow credentials (cookies, authorization headers, etc.)
@@ -129,9 +130,7 @@ CORS_ALLOWED_ORIGINS = [
 
 
 # If using Django Channels
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 import os
