@@ -8,7 +8,7 @@ urlpatterns = [
     
     path('login/',views.login_page,name="login_page"),
     path('logout/',views.logout_page,name="logout_page"),
-     path('get_csrf/', ensure_csrf_cookie(views.get_csrf)),
+    path('get_csrf/', views.get_csrf, name='get_csrf'),
     path('stocktracker/', views.stockTracker, name='stocktracker'),  
     path('get_stock_updates/', views.get_stock_updates, name='get_stock_updates'),
     path("chart/", views.chart_view, name="chart"),

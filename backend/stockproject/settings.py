@@ -146,10 +146,12 @@ USE_TZ = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://20.193.151.222"
+    "http://20.193.151.222:8000" 
 ]
 
-
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 # If using Django Channels
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 # Static files (CSS, JavaScript, Images)

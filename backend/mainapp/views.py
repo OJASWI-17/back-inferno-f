@@ -19,14 +19,13 @@ from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie ,csrf_protect
-
+from django.contrib.auth import authenticate, login
 
 
 # csrf_exempt is used to exempt the view from CSRF verification means that the view will not check for CSRF token in the request
 
 
 
-@csrf_exempt
 def login_page(request):
     if request.method == "POST":
         try:
@@ -43,14 +42,18 @@ def login_page(request):
                 return JsonResponse({'error': 'Invalid password'}, status=400)
             else:
                 login(request, user)
-                return JsonResponse({'message': 'Login successful', 'redirect': '/stockPicker/'})
+                return JsonResponse({
+                'message': 'Login successful',
+                'sessionid': request.session.session_key  # Send session ID back
+            })
         
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-@csrf_exempt
+
+
 def register(request):
     if request.method == "POST":
         try:
@@ -61,26 +64,53 @@ def register(request):
             email = data.get('email')
             password = data.get('password')
             
+            # Validation checks
+            if not all([first_name, last_name, username, email, password]):
+                return JsonResponse({'error': 'All fields are required'}, status=400)
+            
             if User.objects.filter(username=username).exists():
                 return JsonResponse({'error': 'Username is already taken'}, status=400)
             
-            user = User.objects.create(
-                first_name=first_name,
-                last_name=last_name,
-                username=username,
-                email=email
-            )
-            user.set_password(password)
-            user.save()
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({'error': 'Email is already registered'}, status=400)
             
-            return JsonResponse({'message': 'Account created successfully', 'redirect': '/login/'})
+            # Create user
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Automatically log the user in after registration
+            authenticated_user = authenticate(
+                request,
+                username=username,
+                password=password
+            )
+            
+            if authenticated_user is not None:
+                login(request, authenticated_user)
+                return JsonResponse({
+                    'message': 'Account created and logged in successfully',
+                    'sessionid': request.session.session_key,
+                    'redirect': '/landing/'
+                })
+            else:
+                return JsonResponse({
+                    'message': 'Account created but login failed',
+                    'redirect': '/login/'
+                })
         
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-@csrf_exempt
+
 def logout_page(request):
     if request.method == "POST":
         logout(request)
@@ -97,11 +127,12 @@ df = pd.read_csv(CSV_FILE_PATH)
 # Dictionary to store current index for each stock
 stock_indices = {ticker: 0 for ticker in df["ticker"].unique()} # output will be {'AAPL': 0, 'GOOGL': 0, 'MSFT': 0, 'AMZN': 0, 'TSLA': 0} , here 0 is the index of the stock
 
-@ensure_csrf_cookie
+# views.py
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+
 def get_csrf(request):
-    response = JsonResponse({"status": "CSRF ready"})
-    response['X-CSRFToken'] = request.META['CSRF_COOKIE']
-    return response
+    return JsonResponse({'csrfToken': get_token(request)})
 
 def get_stock_updates(selected_stocks):
     """Fetch stock data from CSV and simulate real-time updates."""
