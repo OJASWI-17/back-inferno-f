@@ -18,7 +18,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout 
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie ,csrf_protect
 
 
 
@@ -100,14 +100,7 @@ stock_indices = {ticker: 0 for ticker in df["ticker"].unique()} # output will be
 @ensure_csrf_cookie
 def get_csrf(request):
     response = JsonResponse({"status": "CSRF ready"})
-    response.set_cookie(
-        'csrftoken',
-        request.META.get('CSRF_COOKIE'),
-        domain='20.193.151.222',
-        secure=True,
-        samesite='None',
-        max_age=31449600  # 1 year
-    )
+    response['X-CSRFToken'] = request.META['CSRF_COOKIE']
     return response
 
 def get_stock_updates(selected_stocks):
@@ -247,11 +240,14 @@ def chart_view(request):
 import logging
 logger = logging.getLogger(__name__)
  
+@ensure_csrf_cookie 
+@csrf_protect #
+@login_required
 @require_POST
 def place_order(request):
     # print("CSRF Token from Cookie:", request.COOKIES.get('csrftoken'))
-    print("Cookies:", request.COOKIES)
-    print("CSRF Token from Header:", request.headers.get('X-CSRFToken'))
+    print("CSRF Token:", request.META.get('CSRF_COOKIE'))
+    print("Headers:", request.headers)
     
     if not request.user.is_authenticated:
         return JsonResponse({"error": "User not authenticated"}, status=401)

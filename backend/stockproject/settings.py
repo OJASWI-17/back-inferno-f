@@ -64,25 +64,25 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Security Settings (Critical for CSRF)
-CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript to read
-CSRF_COOKIE_SECURE = True     # True in production (False for HTTP development)
-CSRF_COOKIE_SAMESITE = 'None' # Required for cross-origin
-# CSRF_COOKIE_PATH = '/'        # Make available site-wide
-CSRF_COOKIE_DOMAIN = '20.193.151.222'  # Your Azure VM IP
+# Security Settings
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_DOMAIN = None  # Remove the IP address, let Django handle it
+CSRF_USE_SESSIONS = False  # Not True, as you're using cookies
 
-CSRF_USE_SESSIONS = False     # Use cookies (not sessions)
-CSRF_TRUSTED_ORIGINS = [
+# CORS Settings
+CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://20.193.151.222",
+    "http://20.193.151.222:8000",  # Include port if needed
 ]
-
-# CORS Settings (Must match CSRF)
-CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['X-CSRFToken']
-SESSION_COOKIE_SAMESITE = 'None'  # Must match CSRF setting
-# SESSION_COOKIE_SECURE = True      # Must match CSRF setting
+
+# Session Settings
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
