@@ -76,8 +76,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://20.193.151.222:8000",  # Include port if needed
 ]
-CORS_ALLOW_CREDENTIALS = True
-CORS_EXPOSE_HEADERS = ['X-CSRFToken']
+CORS_ALLOW_CREDENTIALS = True  # Allow cookies for authentication
+CORS_EXPOSE_HEADERS = ['X-CSRFToken'] 
 
 # Session Settings
 SESSION_COOKIE_SAMESITE = 'None'

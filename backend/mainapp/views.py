@@ -26,6 +26,33 @@ from django.contrib.auth import authenticate, login
 
 
 
+# def login_page(request):
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             username = data.get('username')
+#             print("longin", data)
+            
+#             password = data.get('password')
+            
+#             if not User.objects.filter(username=username).exists():
+#                 return JsonResponse({'error': 'Invalid username'}, status=400)
+            
+#             user = authenticate(username=username,password=password)
+#             if user is None:
+#                 return JsonResponse({'error': 'Invalid password'}, status=400)
+#             else:
+#                 login(request, user)
+#                 return JsonResponse({
+#                 'message': 'Login successful',
+#                 'sessionid': request.session.session_key  # Send session ID back
+#             })
+        
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+#     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 def login_page(request):
     if request.method == "POST":
         try:
@@ -42,18 +69,13 @@ def login_page(request):
                 return JsonResponse({'error': 'Invalid password'}, status=400)
             else:
                 login(request, user)
-                return JsonResponse({
-                'message': 'Login successful',
-                'sessionid': request.session.session_key  # Send session ID back
-            })
+                return JsonResponse({'message': 'Login successful', 'redirect': '/stockPicker/'})
         
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-
-
+    return JsonResponse({'error': 'Method not allowed'}, status=405) 
+              
 def register(request):
     if request.method == "POST":
         try:
@@ -64,51 +86,79 @@ def register(request):
             email = data.get('email')
             password = data.get('password')
             
-            # Validation checks
-            if not all([first_name, last_name, username, email, password]):
-                return JsonResponse({'error': 'All fields are required'}, status=400)
-            
             if User.objects.filter(username=username).exists():
                 return JsonResponse({'error': 'Username is already taken'}, status=400)
             
-            if User.objects.filter(email=email).exists():
-                return JsonResponse({'error': 'Email is already registered'}, status=400)
-            
-            # Create user
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
+            user = User.objects.create(
                 first_name=first_name,
-                last_name=last_name
-            )
-            
-            # Automatically log the user in after registration
-            authenticated_user = authenticate(
-                request,
+                last_name=last_name,
                 username=username,
-                password=password
+                email=email
             )
+            user.set_password(password)
+            user.save()
             
-            if authenticated_user is not None: 
-                login(request, authenticated_user)
-                return JsonResponse({
-                    'message': 'Account created and logged in successfully',
-                    'sessionid': request.session.session_key,
-                    'redirect': '/landing/'
-                })
-            else:
-                return JsonResponse({
-                    'message': 'Account created but login failed',
-                    'redirect': '/signin/'
-                })
+            return JsonResponse({'message': 'Account created successfully', 'redirect': '/login/'})
         
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+# def register(request):
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             first_name = data.get('first_name')
+#             last_name = data.get('last_name')
+#             username = data.get('username')
+#             email = data.get('email')
+#             password = data.get('password')
+            
+#             # Validation checks
+#             if not all([first_name, last_name, username, email, password]):
+#                 return JsonResponse({'error': 'All fields are required'}, status=400)
+            
+#             if User.objects.filter(username=username).exists():
+#                 return JsonResponse({'error': 'Username is already taken'}, status=400)
+            
+#             if User.objects.filter(email=email).exists():
+#                 return JsonResponse({'error': 'Email is already registered'}, status=400)
+            
+#             # Create user
+#             user = User.objects.create_user(
+#                 username=username,
+#                 email=email,
+#                 password=password,
+#                 first_name=first_name,
+#                 last_name=last_name
+#             )
+            
+#             # Automatically log the user in after registration
+#             authenticated_user = authenticate(
+#                 request,
+#                 username=username,
+#                 password=password
+#             )
+            
+#             if authenticated_user is not None: 
+#                 login(request, authenticated_user)
+#                 return JsonResponse({
+#                     'message': 'Account created and logged in successfully',
+#                     'sessionid': request.session.session_key,
+#                     'redirect': '/landing/'
+#                 })
+#             else:
+#                 return JsonResponse({
+#                     'message': 'Account created but login failed',
+#                     'redirect': '/signin/'
+#                 })
+        
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+    
+#     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 def logout_page(request):
