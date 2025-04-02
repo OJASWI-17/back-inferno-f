@@ -99,8 +99,16 @@ stock_indices = {ticker: 0 for ticker in df["ticker"].unique()} # output will be
 
 @ensure_csrf_cookie
 def get_csrf(request):
-    """Endpoint to set CSRF cookie (called by React on mount)"""
-    return JsonResponse({"status": "CSRF cookie set"})
+    response = JsonResponse({"status": "CSRF ready"})
+    response.set_cookie(
+        'csrftoken',
+        request.META.get('CSRF_COOKIE'),
+        domain='20.193.151.222',
+        secure=True,
+        samesite='None',
+        max_age=31449600  # 1 year
+    )
+    return response
 
 def get_stock_updates(selected_stocks):
     """Fetch stock data from CSV and simulate real-time updates."""
@@ -241,9 +249,9 @@ logger = logging.getLogger(__name__)
  
 @require_POST
 def place_order(request):
-    print("CSRF Token from Cookie:", request.COOKIES.get('csrftoken'))
+    # print("CSRF Token from Cookie:", request.COOKIES.get('csrftoken'))
+    print("Cookies:", request.COOKIES)
     print("CSRF Token from Header:", request.headers.get('X-CSRFToken'))
-    logger.debug(f"Received request: {request.method}, Content-Type: {request.content_type}")
     
     if not request.user.is_authenticated:
         return JsonResponse({"error": "User not authenticated"}, status=401)
