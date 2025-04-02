@@ -90,7 +90,7 @@ def register(request):
                 password=password
             )
             
-            if authenticated_user is not None:
+            if authenticated_user is not None: 
                 login(request, authenticated_user)
                 return JsonResponse({
                     'message': 'Account created and logged in successfully',
@@ -100,7 +100,7 @@ def register(request):
             else:
                 return JsonResponse({
                     'message': 'Account created but login failed',
-                    'redirect': '/login/'
+                    'redirect': '/signin/'
                 })
         
         except json.JSONDecodeError:
@@ -271,14 +271,14 @@ def chart_view(request):
 import logging
 logger = logging.getLogger(__name__)
  
-@ensure_csrf_cookie 
-@csrf_protect #
-@login_required
+@ensure_csrf_cookie  # Ensure CSRF token is set in the cookie
+@csrf_protect # Protect the view from CSRF attacks
+@login_required # Ensure user is logged in
 @require_POST
 def place_order(request):
     # print("CSRF Token from Cookie:", request.COOKIES.get('csrftoken'))
-    print("CSRF Token:", request.META.get('CSRF_COOKIE'))
-    print("Headers:", request.headers)
+    print("CSRF Token:", request.META.get('CSRF_COOKIE')) # CSRF token from request headers
+    print("Headers:", request.headers) # Print all headers to check if CSRF token is present
     
     if not request.user.is_authenticated:
         return JsonResponse({"error": "User not authenticated"}, status=401)
