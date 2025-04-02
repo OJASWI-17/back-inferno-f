@@ -99,9 +99,8 @@ stock_indices = {ticker: 0 for ticker in df["ticker"].unique()} # output will be
 
 @ensure_csrf_cookie
 def get_csrf(request):
-    response = JsonResponse({"status": "CSRF cookie set"})
-    response["X-CSRFToken"] = request.META.get("CSRF_COOKIE")  # Explicitly set header
-    return response
+    """Endpoint to set CSRF cookie (called by React on mount)"""
+    return JsonResponse({"status": "CSRF cookie set"})
 
 def get_stock_updates(selected_stocks):
     """Fetch stock data from CSV and simulate real-time updates."""
@@ -252,17 +251,12 @@ def place_order(request):
     try:
         # For form-urlencoded data (what your frontend is sending)
         stock_symbol = request.POST.get("stock_symbol")
-        quantity_str = request.POST.get("quantity")
+        quantity = int(request.POST.get("quantity"))
         order_type = request.POST.get("order_type")
-        price = request.POST.get("price")
+        price = float(request.POST.get("price")) if order_type == "limit" else None
         action = request.POST.get("action")
         
-        logger.debug(f"Parsed data: stock={stock_symbol}, qty={quantity_str}, type={order_type}, price={price}, action={action}")
         
-        if not quantity_str:
-            return JsonResponse({"error": "Quantity is required"}, status=400)
-
-        quantity = int(quantity_str)
         
 
         # Fetch current market price from Redis
@@ -299,7 +293,7 @@ def place_order(request):
                 return JsonResponse({"error": result["error"]}, status=400)
 
             return JsonResponse({
-                "success": True, # can i remove this line ? yes or no -
+                "message": result.get("message", "Trade successful"),
                 "balance": result["balance"],
                 "stock": stock_symbol,
                 "quantity": quantity,

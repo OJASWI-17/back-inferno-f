@@ -67,8 +67,8 @@ MIDDLEWARE = [
 # Security Settings (Critical for CSRF)
 CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript to read
 CSRF_COOKIE_SECURE = False     # True in production (False for HTTP development)
-CSRF_COOKIE_SAMESITE = 'None' # Required for cross-origin
-CSRF_COOKIE_PATH = '/'        # Make available site-wide
+CSRF_COOKIE_SAMESITE = 'Lax' # Required for cross-origin
+# CSRF_COOKIE_PATH = '/'        # Make available site-wide
 CSRF_USE_SESSIONS = False     # Use cookies (not sessions)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
@@ -79,8 +79,8 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['X-CSRFToken']
-SESSION_COOKIE_SAMESITE = 'None'  # Must match CSRF setting
-SESSION_COOKIE_SECURE = True      # Must match CSRF setting
+SESSION_COOKIE_SAMESITE = 'Lax'  # Must match CSRF setting
+# SESSION_COOKIE_SECURE = True      # Must match CSRF setting
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
