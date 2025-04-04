@@ -230,6 +230,7 @@ def get_stock_updates(selected_stocks):
 from django.shortcuts import redirect, reverse
 from urllib.parse import urlencode
 # urlencode is used to encode the url parameters
+@csrf_exempt
 def stockPicker(request):
     """Return JSON list of default stocks instead of redirecting"""
     try:
@@ -247,10 +248,11 @@ def checkAuthenticated(request):
 
 from django.http import JsonResponse
 
+@csrf_exempt
 async def stockTracker(request):
-    is_loginned = await checkAuthenticated(request)
-    if not is_loginned:
-        return JsonResponse({"error": "Login First"}, status=401)
+    # is_loginned = await checkAuthenticated(request)
+    # if not is_loginned:
+    #     return JsonResponse({"error": "Login First"}, status=401)
 
     """View to fetch initial stock data and trigger Celery updates."""
     selected_stocks = request.GET.getlist("stock_picker")  # Get multiple values from query params 
@@ -264,11 +266,7 @@ async def stockTracker(request):
     # Start Celery task for periodic updates
     update_stock.delay(selected_stocks)
 
-    return JsonResponse({
-        "message": "Stock tracking started",
-        "room_name": "track",
-        "data": initial_data
-    }, status=200)
+    return JsonResponse({"data": initial_data}, status=200)
 
 
 redis_conn = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)

@@ -63,7 +63,7 @@ def fetch_stock_data_from_csv(selected_stocks):
 def update_stock(selected_stocks=None):
     """Fetch stock data, and send WebSocket updates."""
      # if no stocks are provided, fetch from the database
-    selected_stocks = ['MSFT'] # example of output ['AAPL', 'GOOGL']
+    selected_stocks = ['MSFT','AAPL'] # example of output ['AAPL', 'GOOGL']
     if not selected_stocks:
         print("No stocks selected.")
         return
