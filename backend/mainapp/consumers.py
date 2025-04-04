@@ -46,7 +46,7 @@ class StockConsumer(AsyncWebsocketConsumer):
         # Add only the newly selected stocks
         for stock in stockpicker:
             stock_obj, _ = StockDetail.objects.get_or_create(stock=stock)
-            stock_obj.user.add(user)
+            stock_obj.user.add(user) # Add user to the stock object
 
         print(f"Updated StockDetail for {user}: {stockpicker}")  # Debugging
 
@@ -58,8 +58,9 @@ class StockConsumer(AsyncWebsocketConsumer):
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
-        # Parse query_string
-        query_params = parse_qs(self.scope["query_string"].decode())
+        # Parse query_string means the URL parameters
+        # e.g., ws://localhost:8000/ws/stocks/?stock_picker=AAPL,GOOGL
+        query_params = parse_qs(self.scope["query_string"].decode()) # parse_qs is used to parse the query string into a dictionary ,  # decode() is used to convert bytes to string
         print("Query Params:", query_params)  # Debugging
 
         stockpicker = query_params.get('stock_picker', [])

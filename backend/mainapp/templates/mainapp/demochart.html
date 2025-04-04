@@ -1,160 +1,84 @@
-
-
-
 {% extends 'mainapp/index.html' %}
+{% load static %}
 
-{% block title %} Stock Trading {% endblock %}
-
-{% block css %}
-<style>
-  .container {
-    width: 80%;
-    margin: 20px auto;
-    text-align: center;
-  }
-  .order-form {
-    margin: 20px auto;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-  }
-  .order-form input, .order-form button {
-    padding: 10px;
-    font-size: 16px;
-  }
-  .balance {
-    margin-top: 20px;
-    font-size: 18px;
-  }
-</style>
-{% endblock %}
-
+{% block title %}Stock Trading{% endblock %}
 {% block body %}
 <div class="container">
-  <h1>Stock Trading</h1>
-
-  <!-- Stock Selection Dropdown -->
-  <label for="stockSelector">Select Stock:</label>
-  <select id="stockSelector"></select> <!-- Dropdown is now dynamic -->
-
-  <!-- Buy/Sell Form -->
-  <div class="order-form">
-    <input type="number" id="quantity" placeholder="Quantity" min="1">
-    <button id="buyButton">Buy</button>
-    <button id="sellButton">Sell</button>
-  </div>
-
-  <!-- User Balance -->
-  <div class="balance">
-    <h3>Your Balance: <span id="userBalance"></span></h3>
-  </div>
+  
+<div class="container mt-4">
+    <h3>Your Portfolio</h3>
+    <table class="table">
+      <thead>
+          <tr>
+              <th>Stock</th>
+              <th>Quantity</th>
+              <th>Average Price</th>
+              <th>Current Price</th>
+              <th>Total Value</th>
+              <th>Profit/Loss</th>
+          </tr>
+      </thead>
+      <tbody id="portfolio-table">
+          <!-- Rows will be populated dynamically using JavaScript -->
+      </tbody>
+  </table>
 </div>
 {% endblock %}
 
 {% block js %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Initialize WebSocket connection
-    const ws = new WebSocket("ws://localhost:8000/ws/stocktracker/");
+  // Function to fetch live prices and update the portfolio
+  function fetchLivePrices() {
+    fetch('/get_live_prices/') 
+        .then(response => response.json()) // .then() is used to process the promise returned by fetch()
+        .then(data => { // data is the JSON response from the server
+            const tableBody = document.getElementById('portfolio-table');
+            tableBody.innerHTML = '';  // Clear existing rows
 
-    ws.onopen = function () {
-      console.log("WebSocket Connected");
-    };
+            for (const [stock, details] of Object.entries(data)) {
+                const row = document.createElement('tr');
 
-    ws.onmessage = function (event) {
-      const data = JSON.parse(event.data);
-      console.log("Received Data:", data);
+                // Stock
+                const stockCell = document.createElement('td');
+                stockCell.textContent = stock;
+                row.appendChild(stockCell);
 
-      // Update the stock dropdown with available stocks
-      if (data.available_stocks) {
-        const selector = document.getElementById("stockSelector");
-        selector.innerHTML = ""; // Clear existing options
-        data.available_stocks.forEach(stock => {
-          const option = document.createElement("option");
-          option.value = stock;
-          option.textContent = stock;
-          selector.appendChild(option);
-        });
-      }
+                // Quantity
+                const quantityCell = document.createElement('td');
+                quantityCell.textContent = details.quantity;
+                row.appendChild(quantityCell);
 
-      // Update user balance
-      if (data.user_balance) {
-        document.getElementById("userBalance").textContent = data.user_balance;
-      }
-    };
+                // Average Price
+                const avgPriceCell = document.createElement('td');
+                avgPriceCell.textContent = details.average_price.toFixed(2);
+                row.appendChild(avgPriceCell);
 
-    // Handle buy button click
-    document.getElementById("buyButton").addEventListener("click", function () {
-      const selectedStock = document.getElementById("stockSelector").value;
-      const quantity = document.getElementById("quantity").value;
-      const price = 100; // Replace with actual price from Redis or WebSocket
+                // Current Price
+                const currentPriceCell = document.createElement('td');
+                currentPriceCell.textContent = details.live_price;
+                row.appendChild(currentPriceCell);
 
-      fetch("/buy/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"), // Add CSRF token for security
-        },
-        body: JSON.stringify({
-          stock: selectedStock,
-          quantity: quantity,
-          price: price,
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === "success") {
-          alert("Buy order placed successfully!");
-        } else {
-          alert(data.message);
-        }
-      });
-    });
+                // Total Value
+                const totalValueCell = document.createElement('td');
+                totalValueCell.textContent = details.total_value.toFixed(2);
+                row.appendChild(totalValueCell);
 
-    // Handle sell button click
-    document.getElementById("sellButton").addEventListener("click", function () {
-      const selectedStock = document.getElementById("stockSelector").value;
-      const quantity = document.getElementById("quantity").value;
-      const price = 100; // Replace with actual price from Redis or WebSocket
+                // Profit/Loss
+                const profitLossCell = document.createElement('td');
+                profitLossCell.textContent = `${details.profit_loss.toFixed(2)} (${details.profit_loss_percentage.toFixed(2)}%)`; // Display profit/loss and percentage
+                profitLossCell.style.color = details.profit_loss >= 0 ? 'green' : 'red';
+                row.appendChild(profitLossCell);
 
-      fetch("/sell/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"), // Add CSRF token for security
-        },
-        body: JSON.stringify({
-          stock: selectedStock,
-          quantity: quantity,
-          price: price,
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === "success") {
-          alert("Sell order placed successfully!");
-        } else {
-          alert(data.message);
-        }
-      });
-    });
+                tableBody.appendChild(row);
+            }
+        })
+        .catch(error => console.error('Error fetching live prices:', error));
+}
 
-    // Function to get CSRF token
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-  });
+// Fetch live prices every 1 seconds
+setInterval(fetchLivePrices, 1000);
+fetchLivePrices();  // Initial fetch
+
 </script>
-{% endblock %} 
+{% endblock %}
+

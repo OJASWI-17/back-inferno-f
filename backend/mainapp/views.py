@@ -52,6 +52,7 @@ from django.contrib.auth import authenticate, login
 #             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
 #     return JsonResponse({'error': 'Method not allowed'}, status=405)
+@csrf_exempt
 
 def login_page(request):
     if request.method == "POST":
@@ -64,7 +65,7 @@ def login_page(request):
             if not User.objects.filter(username=username).exists():
                 return JsonResponse({'error': 'Invalid username'}, status=400)
             
-            user = authenticate(username=username,password=password)
+            user = authenticate(username=username,password=password) # authenticate is used  
             if user is None:
                 return JsonResponse({'error': 'Invalid password'}, status=400)
             else:
@@ -75,20 +76,28 @@ def login_page(request):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405) 
-              
+
+@csrf_exempt
 def register(request):
     if request.method == "POST":
         try:
+            print("Received a POST request for registration")  # Debugging statement
+
             data = json.loads(request.body)
+            print("Received Data:", data)  # Print incoming JSON data
+
             first_name = data.get('first_name')
             last_name = data.get('last_name')
             username = data.get('username')
             email = data.get('email')
             password = data.get('password')
-            
+
+            print(f"Extracted Data -> First Name: {first_name}, Last Name: {last_name}, Username: {username}, Email: {email}")
+
             if User.objects.filter(username=username).exists():
+                print("Username is already taken")  # Debugging statement
                 return JsonResponse({'error': 'Username is already taken'}, status=400)
-            
+
             user = User.objects.create(
                 first_name=first_name,
                 last_name=last_name,
@@ -97,12 +106,16 @@ def register(request):
             )
             user.set_password(password)
             user.save()
-            
+
+            print(f"User {username} created successfully!")  # Debugging statement
+
             return JsonResponse({'message': 'Account created successfully', 'redirect': '/login/'})
         
         except json.JSONDecodeError:
+            print("Error: Invalid JSON data received")  # Debugging statement
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
+    print("Error: Method not allowed")  # Debugging statement
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 # def register(request):
 #     if request.method == "POST":
@@ -295,10 +308,11 @@ def fetch_stock_data(selected_stock):
 
 def chart_view(request):
     """Fetch stocks selected by the logged-in user."""
+    
     if request.user.is_authenticated:
         # Convert the QuerySet to a list of stock symbols
         selected_stocks = list(StockDetail.objects.filter(user=request.user).values_list("stock", flat=True))
-        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user) 
         balance = user_profile.balance
         user_data = {
             "username": request.user.username,
@@ -320,22 +334,26 @@ def chart_view(request):
 
 import logging
 logger = logging.getLogger(__name__)
- 
-@ensure_csrf_cookie  # Ensure CSRF token is set in the cookie
-@csrf_protect # Protect the view from CSRF attacks
-@login_required # Ensure user is logged in
+
+# @login_required # Ensure user is logged in
+
 @require_POST
+@csrf_exempt 
 def place_order(request):
     # print("CSRF Token from Cookie:", request.COOKIES.get('csrftoken'))
-    print("CSRF Token:", request.META.get('CSRF_COOKIE')) # CSRF token from request headers
-    print("Headers:", request.headers) # Print all headers to check if CSRF token is present
+    # print("CSRF Token:", request.META.get('CSRF_COOKIE')) # CSRF token from request headers
+    # print("Headers:", request.headers) # Print all headers to check if CSRF token is present
+    if request.user.is_authenticated:
+        print("Authenticated user")
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user) 
     
     if not request.user.is_authenticated:
+        print("not authenticated")
         return JsonResponse({"error": "User not authenticated"}, status=401)
 
     try:
         # For form-urlencoded data (what your frontend is sending)
-        stock_symbol = request.POST.get("stock_symbol")
+        stock_symbol = request.POST.get("stock_symbol") # request.POST.get is used to get the value of the key from the request body
         quantity = int(request.POST.get("quantity"))
         order_type = request.POST.get("order_type")
         price = float(request.POST.get("price")) if order_type == "limit" else None
@@ -405,10 +423,10 @@ def place_order(request):
             return JsonResponse({"error": "Invalid order type"}, status=400)
     
     except Exception as e:
-        logger.error(f"Error processing order: {str(e)}", exc_info=True)
+        # logger.error(f"Error processing order: {str(e)}", exc_info=True)
         return JsonResponse({"error": "Internal server error"}, status=500)
 
-
+@csrf_exempt
 def get_live_prices(request):
     """Fetch live prices for the user's bought stocks and calculate profit/loss."""
     if not request.user.is_authenticated:
@@ -443,8 +461,7 @@ def get_live_prices(request):
     return JsonResponse(live_prices)
 
 
-
-@login_required
+@csrf_exempt
 def order_history(request):
     """Main order history view (renders template)"""
     # Get all transactions (individual trades)
@@ -480,7 +497,7 @@ def order_history(request):
 
     return JsonResponse({"orders": all_orders}, status=200)
 
-@login_required
+@csrf_exempt
 def order_history_ajax(request):
     """AJAX endpoint for dynamic updates"""
     # Same logic as order_history but returns JSON
@@ -524,7 +541,7 @@ def leaderboard(request):
         total_profit = profile.cumulative_profit  # Start with realized profits
         
         # Add unrealized profits from current holdings
-        for stock in profile.user.userstock_set.all():
+        for stock in profile.user.userstock_set.all(): # profile.user.userstock_set.all() 
             try:
                 redis_data = redis_conn.get(f"candlestick_data:{stock.stock}")
                 if redis_data:
